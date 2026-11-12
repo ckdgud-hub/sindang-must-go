@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>신당 로컬 맛집 인포그래픽 & 큐레이션 가이드</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    html {
+      scroll-behavior: smooth;
+    }
+    body {
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+      background-color: #0f172a;
+      color: #f8fafc;
+    }
+    .glass-card {
+      background: rgba(30, 41, 59, 0.75);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    @keyframes pulseHighlight {
+      0% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.8); border-color: #fbbf24; transform: scale(1.02); }
+      50% { box-shadow: 0 0 28px 6px rgba(251, 191, 36, 0.35); border-color: #fbbf24; transform: scale(1.01); }
+      100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0); transform: scale(1); }
+    }
+    .target-highlight {
+      animation: pulseHighlight 1.8s ease-out;
+      border-color: #fbbf24 !important;
+    }
+    .map-pin {
+      cursor: pointer;
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .map-pin:hover {
+      transform: scale(1.22);
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-amber-500 selection:text-black">
+
+  <!-- 상단 네비게이션 & 헤더 -->
+  <header class="relative overflow-hidden border-b border-slate-800 bg-slate-900/90 backdrop-blur-md sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20 mb-1.5">
+            <i class="fa-solid fa-map-pin animate-pulse"></i> 신당역 · 중앙시장 · 힙당동 맛지도
+          </div>
+          <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-100 to-amber-200 bg-clip-text text-transparent">
+            신당 로컬 맛집 인포그래픽 & 네이버 지도 연동 가이드
+          </h1>
+          <p class="text-xs sm:text-sm text-slate-400 mt-0.5">상호명이나 구역을 누르면 하단 상세 리뷰로 바로 이동합니다 · 화장실 컨디션 완비</p>
+        </div>
+
+        <!-- 퀵 통계 뱃지 바 -->
+        <div class="flex items-center gap-2.5 overflow-x-auto py-1">
+          <div class="glass-card px-3 py-2 rounded-xl flex items-center gap-2 border border-slate-700/50">
+            <span class="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-xs">
+              <i class="fa-solid fa-store"></i>
+            </span>
+            <div>
+              <div class="text-[10px] text-slate-400 font-semibold">총 맛집</div>
+              <div class="text-sm font-bold text-white" id="totalCount">14곳</div>
+            </div>
+          </div>
+
+          <div class="glass-card px-3 py-2 rounded-xl flex items-center gap-2 border border-slate-700/50">
+            <span class="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-xs">
+              <i class="fa-solid fa-restroom"></i>
+            </span>
+            <div>
+              <div class="text-[10px] text-slate-400 font-semibold">내부 화장실</div>
+              <div class="text-sm font-bold text-emerald-400">7곳</div>
+            </div>
+          </div>
+
+          <button onclick="copySummaryForKakao()" class="px-3.5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 transition-all shadow-md active:scale-95">
+            <i class="fa-solid fa-share-nodes"></i> 리스트 요약 복사
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- 메인 레이아웃 -->
+  <main class="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 space-y-8">
+
+    <!-- 1. 차단 없는 내장 구역 심볼 맵 (SVG Vector Map) -->
+    <section class="glass-card p-5 sm:p-6 rounded-2xl border border-slate-800">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
+        <div>
+          <h2 class="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-compass text-amber-400"></i>
+            신당 4구역 심볼 약도 (기호 클릭 시 상세 바로가기)
+          </h2>
+          <p class="text-xs text-slate-400 mt-0.5">외부 지도 차단 없이 바로 보는 반경 100m 단위 클러스터 위치도입니다.</p>
+        </div>
+        <!-- 구역별 기호 범례 -->
+        <div class="flex flex-wrap items-center gap-2 text-xs bg-slate-900/80 px-3 py-2 rounded-xl border border-slate-800">
+          <span class="inline-flex items-center gap-1 text-emerald-300 font-bold"><span class="text-sm">●</span> 1구역(퇴계로411)</span>
+          <span class="text-slate-600">|</span>
+          <span class="inline-flex items-center gap-1 text-indigo-300 font-bold"><span class="text-sm">★</span> 2구역(중앙시장)</span>
+          <span class="text-slate-600">|</span>
+          <span class="inline-flex items-center gap-1 text-rose-300 font-bold"><span class="text-sm">◆</span> 3구역(다산로남서편)</span>
+          <span class="text-slate-600">|</span>
+          <span class="inline-flex items-center gap-1 text-amber-300 font-bold"><span class="text-sm">■</span> 4구역(다산로골목)</span>
+        </div>
+      </div>
+
+      <!-- 반응형 SVG 벡터 맵 -->
+      <div class="relative w-full rounded-xl overflow-hidden bg-slate-900 border border-slate-700/80 shadow-inner">
+        <svg viewBox="0 0 900 480" class="w-full h-auto max-h-[500px] select-none" xmlns="http://www.w3.org/2000/svg">
+          <!-- 배경 그리드 -->
+          <defs>
+            <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(148,163,184,0.06)" stroke-width="1"/>
+            </pattern>
+          </defs>
+          <rect width="900" height="480" fill="#0b1120"/>
+          <rect width="900" height="480" fill="url(#grid)"/>
+
+          <!-- 4개 사분면 배경 가이드 영역 (사거리 기준) -->
+          <!-- 우측 상단 전체 컨테이너 -->
+          <rect x="475" y="25" width="405" height="195" rx="16" fill="rgba(30, 41, 59, 0.45)" stroke="rgba(148, 163, 184, 0.15)" stroke-width="1"/>
+          
+          <!-- [우측 상단 좌측] 1구역 : 퇴계로 411 블록 (● 원 - 에메랄드) -->
+          <rect x="488" y="38" width="180" height="170" rx="12" fill="rgba(16, 185, 129, 0.12)" stroke="rgba(16, 185, 129, 0.45)" stroke-dasharray="5 3" stroke-width="1.5"/>
+          <text x="500" y="58" fill="#6ee7b7" font-size="11" font-weight="bold">● 1구역 : 퇴계로411 (3곳)</text>
+          <text x="500" y="74" fill="#94a3b8" font-size="9.5">신당역 1·12번 출구 인근</text>
+
+          <!-- [우측 상단 우측] 2구역 : 서울중앙시장 통로 (★ 별 - 인디고) -->
+          <rect x="680" y="38" width="188" height="170" rx="12" fill="rgba(99, 102, 241, 0.12)" stroke="rgba(99, 102, 241, 0.45)" stroke-dasharray="5 3" stroke-width="1.5"/>
+          <text x="692" y="58" fill="#a5b4fc" font-size="11" font-weight="bold">★ 2구역 : 중앙시장 (5곳)</text>
+          <text x="692" y="74" fill="#94a3b8" font-size="9.5">아케이드 메인 골목 밀집</text>
+
+          <!-- 좌측 하단 : 3구역 다산로 대로 & 남서편 (◆ 다이아 - 로즈) -->
+          <rect x="40" y="260" width="385" height="185" rx="16" fill="rgba(244, 63, 94, 0.1)" stroke="rgba(244, 63, 94, 0.4)" stroke-dasharray="5 3" stroke-width="1.5"/>
+          <text x="60" y="285" fill="#fda4af" font-size="12" font-weight="bold">◆ 3구역 : 다산로 대로 &amp; 남서편 (2곳)</text>
+          <text x="60" y="303" fill="#94a3b8" font-size="10.5">신당역 6~8번 출구 방면 도보 1~2분</text>
+
+          <!-- 우측 하단 : 4구역 다산로 42·44길 골목 (■ 사각 - 앰버) -->
+          <rect x="475" y="260" width="405" height="185" rx="16" fill="rgba(245, 158, 11, 0.1)" stroke="rgba(245, 158, 11, 0.4)" stroke-dasharray="5 3" stroke-width="1.5"/>
+          <text x="495" y="285" fill="#fcd34d" font-size="12" font-weight="bold">■ 4구역 : 다산로 42·44길 &amp; 퇴계로 골목 (4곳)</text>
+          <text x="495" y="303" fill="#94a3b8" font-size="10.5">힙당동 카페거리 &amp; 골목길 상권</text>
+
+          <!-- ==================== 메인 도로망 및 지하철 라인 ==================== -->
+          <!-- 가로 도로: 퇴계로 ~ 왕십리로 -->
+          <line x1="0" y1="235" x2="900" y2="235" stroke="#1e293b" stroke-width="26"/>
+          <!-- 2호선 노선 표시선 (녹색 라인 / 우측 가로 축) -->
+          <line x1="450" y1="235" x2="900" y2="235" stroke="#22c55e" stroke-width="5"/>
+          <line x1="0" y1="235" x2="450" y2="235" stroke="#475569" stroke-width="1.5" stroke-dasharray="6 4"/>
+          <text x="80" y="239" fill="#94a3b8" font-size="11" font-weight="600">← 동대문 방면 (퇴계로)</text>
+          
+          <!-- 2호선 뱃지 라벨 (우측 가로 라인 위) -->
+          <g transform="translate(735, 222)">
+            <rect x="0" y="0" width="135" height="26" rx="6" fill="#14532d" stroke="#22c55e" stroke-width="1.5"/>
+            <text x="67" y="17" text-anchor="middle" fill="#86efac" font-size="11.5" font-weight="800">2호선 (왕십리 방면) →</text>
+          </g>
+
+          <!-- 세로 도로: 다산로 / 6호선 노선 표시 (황토색 세로 축) -->
+          <line x1="450" y1="0" x2="450" y2="480" stroke="#1e293b" stroke-width="26"/>
+          <line x1="450" y1="0" x2="450" y2="480" stroke="#cd853f" stroke-width="5"/>
+          
+          <!-- 6호선 뱃지 라벨 (세로 축 상단 & 하단) -->
+          <g transform="translate(325, 12)">
+            <rect x="0" y="0" width="112" height="22" rx="6" fill="#451a03" stroke="#cd853f" stroke-width="1.2"/>
+            <text x="56" y="15" text-anchor="middle" fill="#fdba74" font-size="10" font-weight="700">▲ 6호선 (동묘 방면)</text>
+          </g>
+          <g transform="translate(325, 448)">
+            <rect x="0" y="0" width="112" height="22" rx="6" fill="#451a03" stroke="#cd853f" stroke-width="1.2"/>
+            <text x="56" y="15" text-anchor="middle" fill="#fdba74" font-size="10" font-weight="700">▼ 6호선 (청구·약수)</text>
+          </g>
+
+          <!-- 신당역 사거리 환승역 중심 허브 (텍스트는 깔끔하게 '신당역'만 표기) -->
+          <g transform="translate(450, 235)">
+            <circle r="22" fill="#0f172a" stroke="#cbd5e1" stroke-width="2.5"/>
+            <text y="5" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="900">신당역</text>
+          </g>
+
+          <!-- ==================== [우측 상단 좌측] 2구역 마커 (● 원 - 에메랄드) ==================== -->
+          <!-- 발라닭 (우측 상단) -->
+          <g class="map-pin" onclick="jumpToPlace(15)" transform="translate(625, 102)">
+            <circle r="11" fill="#059669" stroke="#d1fae5" stroke-width="1.5"/>
+            <text y="3.5" text-anchor="middle" fill="#fff" font-size="11">●</text>
+            <text y="18" text-anchor="middle" fill="#d1fae5" font-size="10.5" font-weight="700">발라닭</text>
+          </g>
+          <!-- 하니칼국수 (좌측 중간) -->
+          <g class="map-pin" onclick="jumpToPlace(14)" transform="translate(525, 138)">
+            <circle r="11" fill="#059669" stroke="#d1fae5" stroke-width="1.5"/>
+            <text y="3.5" text-anchor="middle" fill="#fff" font-size="11">●</text>
+            <text y="18" text-anchor="middle" fill="#a7f3d0" font-size="10" font-weight="600">하니칼국수</text>
+          </g>
+          <!-- 주신당 (좌측 하단) -->
+          <g class="map-pin" onclick="jumpToPlace(13)" transform="translate(525, 184)">
+            <circle r="11" fill="#059669" stroke="#d1fae5" stroke-width="1.5"/>
+            <text y="3.5" text-anchor="middle" fill="#fff" font-size="11">●</text>
+            <text y="18" text-anchor="middle" fill="#d1fae5" font-size="10.5" font-weight="700">주신당</text>
+          </g>
+
+          <!-- ==================== [우측 상단 우측] 1구역 마커 (★ 별 - 인디고) ==================== -->
+          <!-- 기호네곱창 (좌측 상단) -->
+          <g class="map-pin" onclick="jumpToPlace(11)" transform="translate(712, 95)">
+            <circle r="10" fill="#4f46e5" stroke="#e0e7ff" stroke-width="1.5"/>
+            <text y="3.5" text-anchor="middle" fill="#fff" font-size="10">★</text>
+            <text y="16" text-anchor="middle" fill="#e0e7ff" font-size="9.5" font-weight="700">기호네곱창</text>
+          </g>
+          <!-- 지저스 (우측 상단) -->
+          <g class="map-pin" onclick="jumpToPlace(12)" transform="translate(832, 108)">
+            <circle r="10" fill="#4f46e5" stroke="#e0e7ff" stroke-width="1.5"/>
+            <text y="3.5" text-anchor="middle" fill="#fff" font-size="10">★</text>
+            <text y="16" text-anchor="middle" fill="#e0e7ff" font-size="9.5" font-weight="700">지저스</text>
+          </g>
+          <!-- 심야식당 하마 (우측 중간) -->
+          <g class="map-pin" onclick="jumpToPlace(10)" transform="translate(832, 152)">
+            <circle r="10" fill="#4f46e5" stroke="#e0e7ff" stroke-width="1.5"/>
+            <text y="3.5" text-anchor="middle" fill="#fff" font-size="10">★</text>
+            <text y="16" text-anchor="middle" fill="#e0e7ff" font-size="9" font-weight="600">심야식당 하마</text>
+          </g>
+          <!-- 육회본가 (좌측 중단) -->
+          <g class="map-pin" onclick="jumpToPlace(9)" transform="translate(712, 142)">
+            <circle r="10" fill="#4f46e5" stroke="#e0e7ff" stroke-width="1.5"/>
+            <text y="3.5" text-anchor="middle" fill="#fff" font-size="10">★</text>
+            <text y="16" text-anchor="middle" fill="#c7d2fe" font-size="9.5" font-weight="600">육회본가</text>
+          </g>
+          <!-- 옥경이네 건생선 (좌측 최하단) -->
+          <g class="map-pin" onclick="jumpToPlace(8)" transform="translate(712, 186)">
+            <circle r="10" fill="#4f46e5" stroke="#e0e7ff" stroke-width="1.5"/>
+            <text y="3.5" text-anchor="middle" fill="#fff" font-size="10">★</text>
+            <text y="16" text-anchor="middle" fill="#e0e7ff" font-size="9.5" font-weight="700">옥경이네</text>
+          </g>
+
+          <!-- ==================== [좌측 하단] 4구역 마커 (◆ 다이아 - 로즈) ==================== -->
+          <!-- 키라키라윤 (왼쪽) -->
+          <g class="map-pin" onclick="jumpToPlace(6)" transform="translate(150, 365)">
+            <circle r="13" fill="#e11d48" stroke="#ffe4e6" stroke-width="1.5"/>
+            <text y="3.5" text-anchor="middle" fill="#fff" font-size="11">◆</text>
+            <text y="21" text-anchor="middle" fill="#ffe4e6" font-size="11" font-weight="700">키라키라윤</text>
+          </g>
+          <!-- 진성한우곱창 (오른쪽) -->
+          <g class="map-pin" onclick="jumpToPlace(5)" transform="translate(295, 365)">
+            <circle r="13" fill="#e11d48" stroke="#ffe4e6" stroke-width="1.5"/>
+            <text y="3.5" text-anchor="middle" fill="#fff" font-size="11">◆</text>
+            <text y="21" text-anchor="middle" fill="#ffe4e6" font-size="11" font-weight="700">진성한우곱창</text>
+          </g>
+
+          <!-- ==================== [우측 하단] 3구역 마커 (■ 사각 - 앰버) ==================== -->
+          <!-- 윗줄: 이오프 - 군산회찜 - 한방통닭구이 -->
+          <!-- 이오프 -->
+          <g class="map-pin" onclick="jumpToPlace(4)" transform="translate(535, 330)">
+            <circle r="12" fill="#d97706" stroke="#fef3c7" stroke-width="1.5"/>
+            <text y="3.5" text-anchor="middle" fill="#fff" font-size="10">■</text>
+            <text y="20" text-anchor="middle" fill="#fef3c7" font-size="10.5" font-weight="700">이오프(카페)</text>
+          </g>
+          <!-- 군산회찜전문 -->
+          <g class="map-pin" onclick="jumpToPlace(2)" transform="translate(645, 330)">
+            <circle r="12" fill="#d97706" stroke="#fef3c7" stroke-width="1.5"/>
+            <text y="3.5" text-anchor="middle" fill="#fff" font-size="10">■</text>
+            <text y="20" text-anchor="middle" fill="#fef3c7" font-size="10.5" font-weight="700">군산회찜</text>
+          </g>
+          <!-- 한방통닭구이 -->
+          <g class="map-pin" onclick="jumpToPlace(1)" transform="translate(755, 330)">
+            <circle r="12" fill="#d97706" stroke="#fef3c7" stroke-width="1.5"/>
+            <text y="3.5" text-anchor="middle" fill="#fff" font-size="10">■</text>
+            <text y="20" text-anchor="middle" fill="#fef3c7" font-size="10.5" font-weight="700">한방통닭구이</text>
+          </g>
+          <!-- 아랫줄: 신당조갯집 -->
+          <g class="map-pin" onclick="jumpToPlace(3)" transform="translate(755, 400)">
+            <circle r="12" fill="#d97706" stroke="#fef3c7" stroke-width="1.5"/>
+            <text y="3.5" text-anchor="middle" fill="#fff" font-size="10">■</text>
+            <text y="20" text-anchor="middle" fill="#fef3c7" font-size="10.5" font-weight="700">신당조갯집</text>
+          </g>
+        </svg>
+      </div>
+    </section>
+
+    <!-- 2. 4개 핵심 구역 카드 대시보드 (상호명 & 모아보기 클릭 시 상세 이동) -->
+    <section class="glass-card p-5 sm:p-7 rounded-2xl border border-slate-800">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-5">
+        <div>
+          <h2 class="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-layer-group text-amber-400"></i>
+            핵심 구역별 요약 리스트
+          </h2>
+          <p class="text-xs text-slate-400 mt-0.5">개별 <strong>상호명</strong>을 클릭하면 해당 맛집 상세 리뷰로, 하단 <strong>모아보기</strong>를 누르면 구역 전체가 필터링됩니다.</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        
+        <!-- Zone 1 (퇴계로 411 블록) -->
+        <div class="p-4 rounded-xl bg-slate-800/80 border-2 border-emerald-500/40 hover:border-emerald-400 transition-all shadow-lg flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">● 1구역</span>
+              <span class="text-[11px] text-slate-400">도보 30초~1분</span>
+            </div>
+            <h3 onclick="selectZoneAndScroll('zone1')" class="cursor-pointer text-base font-bold text-white hover:text-emerald-300 transition-colors flex items-center gap-1.5">
+              <i class="fa-solid fa-glass-water text-emerald-400"></i> 퇴계로 411 블록
+            </h3>
+            <div class="mt-3 pt-3 border-t border-slate-700/60 space-y-2 text-xs">
+              <div onclick="jumpToPlace(13)" class="cursor-pointer flex items-center justify-between p-1.5 -mx-1.5 rounded-lg hover:bg-emerald-500/20 transition-colors group">
+                <span class="text-slate-200 font-medium group-hover:text-amber-300">주신당 <span class="text-[11px] text-emerald-300 font-normal">(이색데이트, 칵테일)</span></span>
+                <span class="text-[11px] font-semibold px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 shrink-0">1~3차</span>
+              </div>
+              <div onclick="jumpToPlace(14)" class="cursor-pointer flex items-center justify-between p-1.5 -mx-1.5 rounded-lg hover:bg-emerald-500/20 transition-colors group">
+                <span class="text-slate-200 font-medium group-hover:text-amber-300">하니칼국수 <span class="text-[11px] text-emerald-300 font-normal">(알곤이칼국수)</span></span>
+                <span class="text-[11px] font-semibold px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 shrink-0">1~3차</span>
+              </div>
+              <div onclick="jumpToPlace(15)" class="cursor-pointer flex items-center justify-between p-1.5 -mx-1.5 rounded-lg hover:bg-emerald-500/20 transition-colors group">
+                <span class="text-slate-200 font-medium group-hover:text-amber-300">발라닭 <span class="text-[11px] text-emerald-300 font-normal">(레트로갬성, 치킨)</span></span>
+                <span class="text-[11px] font-semibold px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 shrink-0">1~3차</span>
+              </div>
+            </div>
+          </div>
+          <button onclick="selectZoneAndScroll('zone1')" class="mt-4 w-full py-2 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 text-xs font-bold transition-colors">
+            1구역 3곳 상세 모아보기 &darr;
+          </button>
+        </div>
+
+        <!-- Zone 2 (서울중앙시장 통로) -->
+        <div class="p-4 rounded-xl bg-slate-800/80 border-2 border-indigo-500/40 hover:border-indigo-400 transition-all shadow-lg flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-bold px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">★ 2구역 (밀집도 1위)</span>
+              <span class="text-[11px] text-slate-400">시장 통로 1분</span>
+            </div>
+            <h3 onclick="selectZoneAndScroll('zone2')" class="cursor-pointer text-base font-bold text-white hover:text-indigo-300 transition-colors flex items-center gap-1.5">
+              <i class="fa-solid fa-store text-indigo-400"></i> 서울중앙시장 통로
+            </h3>
+            <div class="mt-3 pt-3 border-t border-slate-700/60 space-y-2 text-xs">
+              <div onclick="jumpToPlace(8)" class="cursor-pointer flex items-center justify-between p-1.5 -mx-1.5 rounded-lg hover:bg-indigo-500/20 transition-colors group">
+                <span class="text-slate-200 font-medium group-hover:text-amber-300">옥경이네 건생선 <span class="text-[11px] text-indigo-300 font-normal">(술집)</span></span>
+                <span class="text-[11px] font-semibold px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 shrink-0">2~3차</span>
+              </div>
+              <div onclick="jumpToPlace(11)" class="cursor-pointer flex items-center justify-between p-1.5 -mx-1.5 rounded-lg hover:bg-indigo-500/20 transition-colors group">
+                <span class="text-slate-200 font-medium group-hover:text-amber-300">기호네곱창 <span class="text-[11px] text-indigo-300 font-normal">(야채곱창, 막창구이)</span></span>
+                <span class="text-[11px] font-semibold px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 shrink-0">1~3차</span>
+              </div>
+              <div onclick="jumpToPlace(10)" class="cursor-pointer flex items-center justify-between p-1.5 -mx-1.5 rounded-lg hover:bg-indigo-500/20 transition-colors group">
+                <span class="text-slate-200 font-medium group-hover:text-amber-300">심야식당 하마 <span class="text-[11px] text-indigo-300 font-normal">(이자카야)</span></span>
+                <span class="text-[11px] font-semibold px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 shrink-0">2~3차</span>
+              </div>
+              <div onclick="jumpToPlace(9)" class="cursor-pointer flex items-center justify-between p-1.5 -mx-1.5 rounded-lg hover:bg-indigo-500/20 transition-colors group">
+                <span class="text-slate-200 font-medium group-hover:text-amber-300">육회본가 <span class="text-[11px] text-indigo-300 font-normal">(육회)</span></span>
+                <span class="text-[11px] font-semibold px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 shrink-0">2~3차</span>
+              </div>
+              <div onclick="jumpToPlace(12)" class="cursor-pointer flex items-center justify-between p-1.5 -mx-1.5 rounded-lg hover:bg-indigo-500/20 transition-colors group">
+                <span class="text-slate-200 font-medium group-hover:text-amber-300">지저스 (zisus) <span class="text-[11px] text-indigo-300 font-normal">(멕시코 음식)</span></span>
+                <span class="text-[11px] font-semibold px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 shrink-0">1~3차</span>
+              </div>
+            </div>
+          </div>
+          <button onclick="selectZoneAndScroll('zone2')" class="mt-4 w-full py-2 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 text-xs font-bold transition-colors">
+            2구역 5곳 상세 모아보기 &darr;
+          </button>
+        </div>
+
+        <!-- Zone 3 (다산로 대로 & 남서편) -->
+        <div class="p-4 rounded-xl bg-slate-800/80 border-2 border-rose-500/40 hover:border-rose-400 transition-all shadow-lg flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-bold px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30">◆ 3구역</span>
+              <span class="text-[11px] text-slate-400">6~8번출구 1~2분</span>
+            </div>
+            <h3 onclick="selectZoneAndScroll('zone3')" class="cursor-pointer text-base font-bold text-white hover:text-rose-300 transition-colors flex items-center gap-1.5">
+              <i class="fa-solid fa-road text-rose-400"></i> 다산로 대로 &amp; 남서편
+            </h3>
+            <div class="mt-3 pt-3 border-t border-slate-700/60 space-y-2 text-xs">
+              <div onclick="jumpToPlace(5)" class="cursor-pointer flex items-center justify-between p-1.5 -mx-1.5 rounded-lg hover:bg-rose-500/20 transition-colors group">
+                <span class="text-slate-200 font-medium group-hover:text-amber-300">진성한우곱창 <span class="text-[11px] text-rose-300 font-normal">(소곱창구이)</span></span>
+                <span class="text-[11px] font-semibold px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 shrink-0">1차</span>
+              </div>
+              <div onclick="jumpToPlace(6)" class="cursor-pointer flex items-center justify-between p-1.5 -mx-1.5 rounded-lg hover:bg-rose-500/20 transition-colors group">
+                <span class="text-slate-200 font-medium group-hover:text-amber-300">키라키라윤 <span class="text-[11px] text-rose-300 font-normal">(이자카야)</span></span>
+                <span class="text-[11px] font-semibold px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 shrink-0">2~3차</span>
+              </div>
+            </div>
+          </div>
+          <button onclick="selectZoneAndScroll('zone3')" class="mt-4 w-full py-2 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 text-xs font-bold transition-colors">
+            3구역 2곳 상세 모아보기 &darr;
+          </button>
+        </div>
+
+        <!-- Zone 4 (다산로 42·44길 & 골목) -->
+        <div class="p-4 rounded-xl bg-slate-800/80 border-2 border-amber-500/40 hover:border-amber-400 transition-all shadow-lg flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-bold px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">■ 4구역</span>
+              <span class="text-[11px] text-slate-400">골목 도보 1~2분</span>
+            </div>
+            <h3 onclick="selectZoneAndScroll('zone4')" class="cursor-pointer text-base font-bold text-white hover:text-amber-300 transition-colors flex items-center gap-1.5">
+              <i class="fa-solid fa-mug-hot text-amber-400"></i> 다산로 42·44길 &amp; 골목
+            </h3>
+            <div class="mt-3 pt-3 border-t border-slate-700/60 space-y-2 text-xs">
+              <div onclick="jumpToPlace(3)" class="cursor-pointer flex items-center justify-between p-1.5 -mx-1.5 rounded-lg hover:bg-amber-500/20 transition-colors group">
+                <span class="text-slate-200 font-medium group-hover:text-amber-300">신당조갯집 <span class="text-[11px] text-amber-300 font-normal">(조개)</span></span>
+                <span class="text-[11px] font-semibold px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 shrink-0">1~3차</span>
+              </div>
+              <div onclick="jumpToPlace(2)" class="cursor-pointer flex items-center justify-between p-1.5 -mx-1.5 rounded-lg hover:bg-amber-500/20 transition-colors group">
+                <span class="text-slate-200 font-medium group-hover:text-amber-300">군산회찜전문 <span class="text-[11px] text-amber-300 font-normal">(회,해산물)</span></span>
+                <span class="text-[11px] font-semibold px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 shrink-0">1차</span>
+              </div>
+              <div onclick="jumpToPlace(1)" class="cursor-pointer flex items-center justify-between p-1.5 -mx-1.5 rounded-lg hover:bg-amber-500/20 transition-colors group">
+                <span class="text-slate-200 font-medium group-hover:text-amber-300">한방통닭구이 <span class="text-[11px] text-amber-300 font-normal">(치킨(호프))</span></span>
+                <span class="text-[11px] font-semibold px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 shrink-0">2~3차</span>
+              </div>
+              <div onclick="jumpToPlace(4)" class="cursor-pointer flex items-center justify-between p-1.5 -mx-1.5 rounded-lg hover:bg-amber-500/20 transition-colors group">
+                <span class="text-slate-200 font-medium group-hover:text-amber-300">이오프 <span class="text-[11px] text-amber-300 font-normal">(카페(디저트) / 쉬어가기)</span></span>
+                <span class="text-[11px] font-semibold px-1.5 py-0.5 rounded bg-teal-500/20 text-teal-300 shrink-0">카페</span>
+              </div>
+            </div>
+          </div>
+          <button onclick="selectZoneAndScroll('zone4')" class="mt-4 w-full py-2 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-xs font-bold transition-colors">
+            4구역 4곳 상세 모아보기 &darr;
+          </button>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 3. 상세 리뷰 카드 섹션 & 필터 컨트롤 -->
+    <section id="detailSection" class="scroll-mt-24 space-y-5">
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-slate-900/90 p-4 rounded-2xl border border-slate-800">
+        <!-- 필터 버튼들 -->
+        <div class="flex flex-wrap items-center gap-2" id="filterContainer">
+          <button data-filter="all" onclick="setFilter('all')" class="filter-btn active px-3.5 py-2 rounded-xl text-xs font-bold bg-amber-500 text-slate-950 transition-all">
+            전체보기 (14)
+          </button>
+          <button data-filter="zone1" onclick="setFilter('zone1')" class="filter-btn px-3 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-emerald-300 hover:bg-slate-700 transition-all">
+            ● 1구역·퇴계로411 (3)
+          </button>
+          <button data-filter="zone2" onclick="setFilter('zone2')" class="filter-btn px-3 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-indigo-300 hover:bg-slate-700 transition-all">
+            ★ 2구역·중앙시장 (5)
+          </button>
+          <button data-filter="zone3" onclick="setFilter('zone3')" class="filter-btn px-3 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-rose-300 hover:bg-slate-700 transition-all">
+            ◆ 3구역·다산로남서편 (2)
+          </button>
+          <button data-filter="zone4" onclick="setFilter('zone4')" class="filter-btn px-3 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-amber-300 hover:bg-slate-700 transition-all">
+            ■ 4구역·다산로골목 (4)
+          </button>
+          <button data-filter="indoor" onclick="setFilter('indoor')" class="filter-btn px-3 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-teal-300 hover:bg-slate-700 transition-all">
+            <i class="fa-solid fa-restroom mr-1"></i> 내부 화장실만
+          </button>
+        </div>
+
+        <!-- 검색 입력 -->
+        <div class="relative w-full lg:w-64">
+          <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+          <input type="text" id="searchInput" oninput="renderCards()" placeholder="상호명, 메뉴, 특징 검색..."
+            class="w-full pl-9 pr-4 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition-colors">
+        </div>
+      </div>
+
+      <!-- 카드 그리드 컨테이너 -->
+      <div id="cardsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <!-- JS로 동적 렌더링 -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- 토스트 메시지 박스 -->
+  <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-full bg-slate-800 text-white text-xs font-bold shadow-2xl border border-amber-500/40 flex items-center gap-2 opacity-0 pointer-events-none transition-all duration-300">
+    <i class="fa-solid fa-circle-check text-amber-400"></i>
+    <span id="toastMsg">복사되었습니다!</span>
+  </div>
+
+  <script>
+    // 14개 신당 맛집 전체 데이터셋
+    const places = [
+      {
+        id: 1,
+        zone: "zone4",
+        zoneLabel: "■ 4구역 · 다산로 42·44길 & 골목",
+        zoneColor: "amber",
+        category: "치킨(호프)",
+        stage: "2~3차",
+        name: "한방통닭구이",
+        address: "서울 중구 퇴계로86길 15",
+        naverQuery: "신당 한방통닭구이 퇴계로86길",
+        feature: "한양대 김종옥보다 맛있음. 통닭외에 다양한 호프메뉴들 다 맛있음.",
+        tip: "2~3차 호프 분위기로 강추",
+        toilet: "내부",
+        toiletType: "indoor"
+      },
+      {
+        id: 2,
+        zone: "zone4",
+        zoneLabel: "■ 4구역 · 다산로 42·44길 & 골목",
+        zoneColor: "amber",
+        category: "회,해산물",
+        stage: "1차",
+        name: "군산회찜전문(군산횟집)",
+        address: "서울 중구 다산로44길 36",
+        naverQuery: "군산회찜전문 신당",
+        feature: "예약필수, 맞은편 2호점이 독립되어 있어서 더깔끔하고 덜 시끄러움. 스끼다시들이 괜찮고 직원 친절, 회는 두툼하게 써는 스타일, 광어회에 엔가와가 살과 붙어있게 썰어주는게 특징",
+        tip: "방문 전 예약 필수 · 맞은편 2호점 추천",
+        toilet: "외부 (좁음)",
+        toiletType: "outdoor"
+      },
+      {
+        id: 3,
+        zone: "zone4",
+        zoneLabel: "■ 4구역 · 다산로 42·44길 & 골목",
+        zoneColor: "amber",
+        category: "조개",
+        stage: "1~3차",
+        name: "신당조갯집",
+        address: "서울 중구 다산로42길 70, 1층",
+        naverQuery: "신당조갯집",
+        feature: "조개보일링 깔끔하고 맛있음 (고춧기름?이 진함), 조개구이 싱싱함, 예전에는 웨이팅안심했는데 인스타 뜨고 심해짐.",
+        tip: "인스타 핫플 등극으로 웨이팅 주의",
+        toilet: "내부 (건물2층)",
+        toiletType: "indoor"
+      },
+      {
+        id: 4,
+        zone: "zone4",
+        zoneLabel: "■ 4구역 · 다산로 42·44길 & 골목",
+        zoneColor: "amber",
+        category: "카페(디저트) / 쉬어가기",
+        stage: "카페",
+        name: "이오프",
+        address: "서울 중구 다산로42길 18 1층 이오프",
+        naverQuery: "신당 이오프",
+        feature: "3남매 중 둘째, 셋째가 운영. 빵 직접만들고, 커피 맛있음. 이집 첫째랑 제 사촌동생이랑 올해 9월에 결혼했음. 아담하고 아기자기한 느낌.",
+        tip: "수제 베이커리 & 커피 맛집 · 쉬어가기 굿",
+        toilet: "외부 (상가화장실)",
+        toiletType: "outdoor"
+      },
+      {
+        id: 5,
+        zone: "zone3",
+        zoneLabel: "◆ 3구역 · 다산로 대로 & 남서편",
+        zoneColor: "rose",
+        category: "소곱창구이",
+        stage: "1차",
+        name: "진성한우곱창",
+        address: "서울 중구 다산로 243-1",
+        naverQuery: "진성한우곱창 신당",
+        feature: "리뉴얼전에 갔었는데 맛있음, 리뉴얼 후에는 매장도 더 깔끔해지고 맛도 여전히 좋다고함, 대신 웨이팅 생겼다고함.",
+        tip: "리뉴얼 후 매장 쾌적 · 1차 곱창 원픽",
+        toilet: "내부",
+        toiletType: "indoor"
+      },
+      {
+        id: 6,
+        zone: "zone3",
+        zoneLabel: "◆ 3구역 · 다산로 대로 & 남서편",
+        zoneColor: "rose",
+        category: "이자카야",
+        stage: "2~3차",
+        name: "키라키라윤",
+        address: "서울 중구 다산로39길 22 1층",
+        naverQuery: "키라키라윤 신당",
+        feature: "분위기 좋은 이자카야. 체인점이라 긴 설명은 ㄴ",
+        tip: "무난하고 분위기 좋은 2~3차 이자카야",
+        toilet: "외부 (남녀공용이지만 시건장치 있고 깔끔)",
+        toiletType: "outdoor"
+      },
+      {
+        id: 8,
+        zone: "zone2",
+        zoneLabel: "★ 2구역 · 서울중앙시장 통로",
+        zoneColor: "indigo",
+        category: "술집",
+        stage: "2~3차",
+        name: "옥경이네 건생선",
+        address: "중앙시장 안 (서울 중구 퇴계로85길 7)",
+        naverQuery: "옥경이네 건생선",
+        feature: "갑오징어구이 메인이고, 나머지도 괜춘, 웨이팅이 심함.",
+        tip: "갑오징어구이 필수 주문 · 웨이팅 감안",
+        toilet: "내부",
+        toiletType: "indoor"
+      },
+      {
+        id: 9,
+        zone: "zone2",
+        zoneLabel: "★ 2구역 · 서울중앙시장 통로",
+        zoneColor: "indigo",
+        category: "육회",
+        stage: "2~3차",
+        name: "육회본가",
+        address: "중앙시장 안 (서울 중구 퇴계로85길)",
+        naverQuery: "중앙시장 육회본가",
+        feature: "맛있음.",
+        tip: "중앙시장 안 깔끔한 육회 2~3차 스팟",
+        toilet: "내부 또는 시장 중앙 공용화장실 이용",
+        toiletType: "indoor"
+      },
+      {
+        id: 10,
+        zone: "zone2",
+        zoneLabel: "★ 2구역 · 서울중앙시장 통로",
+        zoneColor: "indigo",
+        category: "이자카야",
+        stage: "2~3차",
+        name: "심야식당 하마",
+        address: "중앙시장 안 (서울 중구 퇴계로85길 22)",
+        naverQuery: "심야식당 하마 신당",
+        feature: "꼬치구이, 분위기 괜찮음. 일드 심야식당의 그런느낌은 아님.",
+        tip: "꼬치구이에 가볍게 한잔하기 좋은 곳",
+        toilet: "내부/공용",
+        toiletType: "indoor"
+      },
+      {
+        id: 11,
+        zone: "zone2",
+        zoneLabel: "★ 2구역 · 서울중앙시장 통로",
+        zoneColor: "indigo",
+        category: "야채곱창, 막창구이",
+        stage: "1~3차",
+        name: "기호네곱창",
+        address: "중앙시장 안 ★★★ (시장밖에도 있음. 맛있다고는 하나 원조는여기)",
+        highlightAddress: true,
+        naverQuery: "기호네곱창 중앙시장",
+        feature: "50년 가까이 된 집. 엄마가 시집오기전부터 다니시던 곳. 매년 가격이 올라서 속상.",
+        tip: "시장 밖 분점 말고 반드시 시장 안 원조 본점으로!",
+        toilet: "시장 중앙 공용화장실 이용",
+        toiletType: "outdoor"
+      },
+      {
+        id: 12,
+        zone: "zone2",
+        zoneLabel: "★ 2구역 · 서울중앙시장 통로",
+        zoneColor: "indigo",
+        category: "멕시코 음식",
+        stage: "1~3차",
+        name: "zisus (지저스)",
+        address: "중앙시장 안 (서울 중구 퇴계로85길 42)",
+        naverQuery: "신당 지저스 zisus",
+        feature: "멕시칸음식 좋아하거나 데낄라 좋아하면 추천.",
+        tip: "중앙시장 속 이색 타코 & 데낄라 성지",
+        toilet: "시장 중앙 공용화장실 이용",
+        toiletType: "outdoor"
+      },
+      {
+        id: 13,
+        zone: "zone1",
+        zoneLabel: "● 1구역 · 퇴계로 411 블록",
+        zoneColor: "emerald",
+        category: "이색데이트, 칵테일",
+        stage: "1~3차",
+        name: "주신당",
+        address: "서울 중구 퇴계로 411",
+        naverQuery: "주신당",
+        feature: "분위기 깡패, 여친과 데이트하러 한번가보거나 이성친구들과 가기좋음. 가격은 사악함. 안주들도 신기하고 맛있음. 약간 오컬트적인 분위기?",
+        tip: "십이지신 컨셉 힙플 · 데이트/이성모임 강추",
+        toilet: "내부 (화장실 분위기도 깡패)",
+        toiletType: "indoor"
+      },
+      {
+        id: 14,
+        zone: "zone1",
+        zoneLabel: "● 1구역 · 퇴계로 411 블록",
+        zoneColor: "emerald",
+        category: "알곤이칼국수",
+        stage: "1~3차",
+        name: "하니칼국수",
+        address: "주신당 근처 (서울 중구 퇴계로 411-15)",
+        naverQuery: "하니칼국수 신당",
+        feature: "알곤이칼국수 맛이 따로 노는 느낌. 전 종류는 무난했음",
+        tip: "솔직 비추 경고 · 굳이 간다면 전 메뉴만 추천",
+        toilet: "정보 없음 (인근 상가)",
+        toiletType: "outdoor",
+        isWarning: true
+      },
+      {
+        id: 15,
+        zone: "zone1",
+        zoneLabel: "● 1구역 · 퇴계로 411 블록",
+        zoneColor: "emerald",
+        category: "레트로갬성, 치킨",
+        stage: "1~3차",
+        name: "발라닭",
+        address: "서울 중구 퇴계로 411-34",
+        naverQuery: "발라닭 신당",
+        feature: "레트로갬성, 복층, 음식들 전반적으로 맛있음. 매점이랑 굿즈 파는곳도 있음.",
+        tip: "복층 레트로 인테리어 & 포토존 굿즈샵 완비",
+        toilet: "내부 (깔끔)",
+        toiletType: "indoor"
+      }
+    ];
+
+    let currentFilter = 'all';
+
+    // 필터 버튼 스타일 및 상태 변경
+    function setFilter(filter) {
+      currentFilter = filter;
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        if (btn.dataset.filter === filter) {
+          btn.classList.remove('bg-slate-800', 'text-indigo-300', 'text-emerald-300', 'text-amber-300', 'text-rose-300', 'text-teal-300');
+          btn.classList.add('bg-amber-500', 'text-slate-950', 'font-bold');
+        } else {
+          btn.classList.remove('bg-amber-500', 'text-slate-950', 'font-bold');
+          btn.classList.add('bg-slate-800');
+          if (btn.dataset.filter === 'zone1') btn.classList.add('text-emerald-300');
+          else if (btn.dataset.filter === 'zone2') btn.classList.add('text-indigo-300');
+          else if (btn.dataset.filter === 'zone3') btn.classList.add('text-rose-300');
+          else if (btn.dataset.filter === 'zone4') btn.classList.add('text-amber-300');
+          else if (btn.dataset.filter === 'indoor') btn.classList.add('text-teal-300');
+          else btn.classList.add('text-slate-300');
+        }
+      });
+      renderCards();
+    }
+
+    // 구역 모아보기 클릭 시 필터링 + 상세 영역 스크롤
+    function selectZoneAndScroll(zoneId) {
+      document.getElementById('searchInput').value = '';
+      setFilter(zoneId);
+      const section = document.getElementById('detailSection');
+      if (section) {
+        section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+
+    // 개별 상호명 / 지도 마커 클릭 시 해당 상세 카드로 점프 + 하이라이트
+    function jumpToPlace(placeId) {
+      document.getElementById('searchInput').value = '';
+      setFilter('all');
+      setTimeout(() => {
+        const card = document.getElementById(`place-card-${placeId}`);
+        if (card) {
+          card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          card.classList.remove('target-highlight');
+          void card.offsetWidth; // 리플로우 트리거
+          card.classList.add('target-highlight');
+        }
+      }, 60);
+    }
+
+    // 주소 클립보드 복사 (iFrame 호환)
+    function copyAddress(text) {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      try {
+        document.execCommand('copy');
+        showToast(`주소 복사 완료: ${text}`);
+      } catch (err) {
+        showToast('복사에 실패했습니다.');
+      }
+      document.body.removeChild(textarea);
+    }
+
+    // 카톡 공유용 요약 복사
+    function copySummaryForKakao() {
+      const lines = ["[신당 로컬 맛집 구역별 리스트]"];
+      const zones = [
+        { key: 'zone1', title: '● 1구역 (퇴계로 411 블록)' },
+        { key: 'zone2', title: '★ 2구역 (서울중앙시장 통로)' },
+        { key: 'zone3', title: '◆ 3구역 (다산로 대로 & 남서편)' },
+        { key: 'zone4', title: '■ 4구역 (다산로 42·44길 & 골목)' }
+      ];
+      zones.forEach(z => {
+        lines.push(`\n${z.title}`);
+        places.filter(p => p.zone === z.key).forEach(p => {
+          lines.push(`- ${p.name} (${p.category} / ${p.stage}) : ${p.address}`);
+        });
+      });
+      copyAddress(lines.join('\n'));
+      showToast('카톡 공유용 구역별 맛집 리스트가 복사되었습니다!');
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toastMsg').textContent = msg;
+      toast.classList.remove('opacity-0', 'pointer-events-none');
+      clearTimeout(window._toastTimer);
+      window._toastTimer = setTimeout(() => {
+        toast.classList.add('opacity-0', 'pointer-events-none');
+      }, 2400);
+    }
+
+    // 상세 카드 그리드 렌더링
+    function renderCards() {
+      const grid = document.getElementById('cardsGrid');
+      const query = document.getElementById('searchInput').value.trim().toLowerCase();
+
+      const filtered = places.filter(p => {
+        const matchFilter =
+          currentFilter === 'all' ||
+          (currentFilter === 'indoor' && p.toiletType === 'indoor') ||
+          p.zone === currentFilter;
+
+        const matchQuery =
+          !query ||
+          p.name.toLowerCase().includes(query) ||
+          p.category.toLowerCase().includes(query) ||
+          p.feature.toLowerCase().includes(query) ||
+          p.address.toLowerCase().includes(query);
+
+        return matchFilter && matchQuery;
+      });
+
+      if (filtered.length === 0) {
+        grid.innerHTML = `
+          <div class="col-span-full py-12 text-center glass-card rounded-2xl border border-slate-800">
+            <i class="fa-solid fa-magnifying-glass text-3xl text-slate-600 mb-3"></i>
+            <p class="text-slate-400 text-sm">조건에 일치하는 맛집이 없습니다.</p>
+          </div>
+        `;
+        return;
+      }
+
+      const zoneBadgeStyles = {
+        indigo: "bg-indigo-500/15 text-indigo-300 border-indigo-500/30",
+        emerald: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
+        amber: "bg-amber-500/15 text-amber-300 border-amber-500/30",
+        rose: "bg-rose-500/15 text-rose-300 border-rose-500/30"
+      };
+
+      grid.innerHTML = filtered.map(p => {
+        const naverUrl = `https://map.naver.com/p/search/${encodeURIComponent(p.naverQuery)}`;
+        const toiletBadge = p.toiletType === 'indoor'
+          ? `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30"><i class="fa-solid fa-restroom"></i> ${p.toilet}</span>`
+          : `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-orange-500/15 text-orange-300 border border-orange-500/30"><i class="fa-solid fa-door-open"></i> ${p.toilet}</span>`;
+
+        const cardBorder = p.isWarning
+          ? "border-red-500/40 bg-red-950/20"
+          : "border-slate-700/70 hover:border-slate-500";
+
+        return `
+          <article id="place-card-${p.id}" class="glass-card rounded-2xl p-5 border ${cardBorder} flex flex-col justify-between transition-all duration-300 shadow-lg">
+            <div>
+              <!-- 상단 구역 & 추천 차수 -->
+              <div class="flex items-center justify-between gap-2 mb-3">
+                <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${zoneBadgeStyles[p.zoneColor]}">
+                  ${p.zoneLabel}
+                </span>
+                <span class="text-xs font-extrabold px-2.5 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/30 shrink-0">
+                  ${p.stage}
+                </span>
+              </div>
+
+              <!-- 상호명 & 업종 구분 -->
+              <div class="mb-2">
+                <h3 class="text-lg font-extrabold text-white flex items-center gap-2">
+                  ${p.name}
+                  ${p.isWarning ? '<span class="text-[10px] px-2 py-0.5 rounded bg-red-500/20 text-red-300 border border-red-500/40">비추천</span>' : ''}
+                </h3>
+                <p class="text-xs text-amber-400/90 font-semibold mt-0.5">${p.category}</p>
+              </div>
+
+              <!-- 주소 -->
+              <div class="flex items-start gap-1.5 text-xs mb-3 p-2.5 rounded-xl border ${p.highlightAddress ? 'bg-amber-500/15 border-amber-400/60 text-amber-200 font-bold shadow-sm' : 'bg-slate-900/60 border-slate-800/80 text-slate-400'}">
+                <i class="fa-solid fa-location-dot ${p.highlightAddress ? 'text-amber-400 animate-bounce' : 'text-slate-500'} mt-0.5"></i>
+                <span class="flex-1 leading-relaxed">
+                  ${p.highlightAddress
+                    ? `<span class="text-amber-300 font-extrabold underline decoration-amber-400/70 underline-offset-4">중앙시장 안 ★★★</span> <span class="text-amber-100/90 font-semibold">(시장밖에도 있음. 맛있다고는 하나 원조는여기)</span>`
+                    : p.address}
+                </span>
+              </div>
+
+              <!-- 솔직 체감 특징 -->
+              <p class="text-xs sm:text-sm text-slate-200 leading-relaxed mb-3">
+                "${p.feature}"
+              </p>
+
+              <!-- 한줄 팁 -->
+              <div class="text-[11px] text-slate-300 bg-slate-800/80 px-3 py-2 rounded-lg border-l-2 border-amber-400 mb-4">
+                <span class="font-bold text-amber-300">TIP:</span> ${p.tip}
+              </div>
+            </div>
+
+            <!-- 하단 화장실 정보 & 네이버 지도 / 복사 액션 -->
+            <div class="pt-3 border-t border-slate-800 flex flex-wrap items-center justify-between gap-2">
+              ${toiletBadge}
+
+              <div class="flex items-center gap-1.5 ml-auto">
+                <button onclick="copyAddress('${p.address.replace(/'/g, "\\'")}')" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-semibold transition-colors flex items-center gap-1">
+                  <i class="fa-regular fa-copy"></i> 주소복사
+                </button>
+                <a href="${naverUrl}" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 rounded-lg bg-[#03C75A] hover:bg-[#02b351] text-white text-[11px] font-extrabold transition-colors flex items-center gap-1 shadow-sm">
+                  <span class="font-black">N</span> 네이버지도
+                </a>
+              </div>
+            </div>
+          </article>
+        `;
+      }).join('');
+    }
+
+    // 초기 렌더링 실행
+    window.addEventListener('DOMContentLoaded', () => {
+      renderCards();
+    });
+  </script>
+</body>
+</html>
