@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>지극히 주관적인 신당맛집 리스트</title>
+  <title>신당 맛집 인포그래픽 & 큐레이션 가이드</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -642,6 +642,7 @@
         address: "중앙시장 안 ★★★ (시장밖에도 있음. 맛있다고는 하나 원조는여기)",
         highlightAddress: true,
         naverQuery: "기호네곱창 중앙시장",
+        naverUrl: "https://map.naver.com/p/entry/place/18103149?lng=127.0195406&lat=37.5678744&placePath=%2Fhome%3Ffrom%3Dmap%26fromPanelNum%3D1%26additionalHeight%3D76%26timestamp%3D202611121316%26locale%3Dko%26svcName%3Dmap_pcv5&entry=plt&searchType=place&c=15.00,0,0,0,dh",
         feature: "50년 가까이 된 집. 가게주인이 어머니에서 아들로 바뀌고, 손님도 어머니에서 아들로 대를 이어지는 맛집. 매년 가격이 올라서 속상.",
         tip: "시장 밖 분점 말고 반드시 시장 안 원조 본점으로!",
         toilet: "시장 중앙 공용화장실 이용",
@@ -843,7 +844,7 @@
       };
 
       grid.innerHTML = filtered.map(p => {
-        const naverUrl = `https://map.naver.com/p/search/${encodeURIComponent(p.naverQuery)}`;
+        const naverUrl = p.naverUrl ? p.naverUrl : `https://map.naver.com/p/search/${encodeURIComponent(p.naverQuery)}`;
         const toiletBadge = p.toiletType === 'indoor'
           ? `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30"><i class="fa-solid fa-circle-check text-xs"></i> 내부 화장실</span>`
           : `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-slate-800 text-slate-400 border border-slate-700"><i class="fa-solid fa-triangle-exclamation text-xs"></i> ${p.toilet}</span>`;
